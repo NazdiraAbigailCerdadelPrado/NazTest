@@ -1,20 +1,44 @@
-from flask import Flask, render_template, send_file
+from datetime import datetime, time
+from flask import Flask, render_template, send_file, Response
 import os
 
 application = app = Flask(__name__)
 
-baseDatos = [["28 nov 2021","ID"],["30 nov 2021","ID1"]] # Fecha, URLVideo, URLTexto
+baseDatos = [["audios/ID.mp3","ID"],["audios/ID1.mp3","ID1"]] # Fecha, URLVideo, URLTexto
 
 print(os.listdir("textos/"))
 print("hola")
 
+def get_file_date(path_to_file: str):
+    """We extract date from file"""
+    file_data = os.stat(path_to_file)
+    return datetime.fromtimestamp(file_data.st_mtime)
+
 @app.route("/")
 def hello_world():
-    return render_template("speechRview.html", len = len(baseDatos), variables = baseDatos)
+    return render_template("speechRview.html", len = len(baseDatos), variables = baseDatos, get_file_date = get_file_date)
 
-@app.route("/videoView")
-def hello_worlds():
-    return render_template("videoView.html")
+#@app.route("/videoView")
+#def hello_worlds():
+#    return render_template("videoView.html")
+
+@app.route("/audios/<path:filename>", methods=["GET","POST"])
+def getAudios(filename):
+    try:
+        path_to_file = f"audios/{ filename }"
+        # We validate that the file exists 
+        if not os.path.exists(path_to_file):
+            return Response(
+                "Not found",
+                status = 404
+            )
+        print(get_file_date(path_to_file))
+        return send_file(path_to_file)
+    except Exception as e:
+        return Response(
+            e.__str__(),
+            status = 500
+        )
 
 @app.route("/textos/<path:filename>", methods=["GET","POST"])
 def getTextos(filename):
